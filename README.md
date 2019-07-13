@@ -1,2 +1,2 @@
 # DeepFD-pyTorch
-A PtTorch implementation of DeepFD
+A PyTorch implementation of DeepFD
