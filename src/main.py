@@ -8,7 +8,7 @@ import numpy as np
 
 from src.utils import *
 from src.models import *
-from src.dataCenter import *
+from src.dataLoader import *
 
 parser = argparse.ArgumentParser(description='DeepFD')
 parser.add_argument('--cuda', type=int, default=-1, help='Which GPU to run on (-1 for using CPU, 9 for not specifying which GPU to use.)')
@@ -48,7 +48,7 @@ def main():
     if not os.path.isdir(args.out_path): os.mkdir(args.out_path)
 
     logger = getLogger(args.name, args.out_path, args.config_dir)
-    Dl = DataLoader(args)
+    Dl = DataLoader(args, logger)
 
     deepFD = DeepFD(args)
 
