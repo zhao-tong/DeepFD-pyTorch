@@ -24,6 +24,8 @@ parser.add_argument('--epochs', type=int, default=5)
 parser.add_argument('--b_sz', type=int, default=100)
 parser.add_argument('--emb_size', type=int, default=128)
 parser.add_argument('--max_vali_f1', type=float, default=0)
+parser.add_argument('--alpha', type=float, default=10)
+parser.add_argument('--gamma', type=float, default=0.001)
 args = parser.parse_args()
 args.argv = sys.argv
 
@@ -53,7 +55,7 @@ def main():
     features = torch.FloatTensor(getattr(Dl, Dl.ds+'_u2p').toarray()).to(device)
 
     deepFD = DeepFD(features.size(1), args.emb_size)
-    model_loss = Loss_DeepFD()
+    model_loss = Loss_DeepFD(features, args.alpha, alpha.gamma)
 
     for epoch in range(args.epochs):
         logger.info(f'----------------------EPOCH {epoch}-----------------------')

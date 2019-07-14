@@ -63,17 +63,18 @@ def train_model(Dl, args, logger, deepFD, model_loss, device, epoch):
             params.append(param)
     optimizer = torch.optim.SGD(params, lr=0.025)
     optimizer.zero_grad()
-    gnn.zero_grad()
+    deepFD.zero_grad()
 
     batches = math.ceil(len(train_nodes) / args.b_sz)
     visited_nodes = set()
+    training_cps = Dl.get_train()
     for index in range(batches):
         nodes_batch = train_nodes[index*args.b_sz:(index+1)*args.b_sz]
-        nodes_batch = np.asarray(list(model_loss.extend_nodes(nodes_batch, num=10)))
-        visited_nodes |= (set(nodes_batch) & set(train_nodes))
+        nodes_batch = np.asarray(model_loss.extend_nodes(nodes_batch, training_cps))
+        visited_nodes |= set(nodes_batch)
 
-        embs_batch, recons_batch = deepFD(nodes_batch)
-        loss = model_loss.get_loss(nodes_batch, embs_batch, recons_batch)
+        embs_batch, recon_batch = deepFD(nodes_batch)
+        loss = model_loss.get_loss(nodes_batch, embs_batch, recon_batch)
 
         logger.info(f'EP[{epoch}], Batch [{index+1}/{batches}], Loss: {loss.item():.4f}, Dealed Nodes [{len(visited_nodes)}/{len(train_nodes)}]')
         loss.backward()

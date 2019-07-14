@@ -66,7 +66,7 @@ class DataLoader():
         setattr(self, dataSet+'_simi', graph_simi)
 
     def get_train(self):
-        training_cps = []
+        training_cps = defaultdict(list)
         g_u2u = getattr(self, self.ds+'_u2u')
         n = np.shape(g_u2u)[0]
         for i in range(n):
@@ -82,10 +82,10 @@ class DataLoader():
             else:
                 neg_nodes = np.random.choice(neg_pool, 10, replace=False)
             for pos_n in pos_nodes:
-                training_cps.append([i, pos_n])
+                training_cps[i].append((i, pos_n))
             for neg_n in neg_nodes:
-                training_cps.append([i, neg_n])
-        return np.asarray(training_cps)
+                training_cps[i].append((i, neg_n))
+        return training_cps
 
     def _split_data_cls(self, num_node, test_split=3, val_split=6):
         rand_indices = np.random.permutation(num_nodes)
