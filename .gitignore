@@ -1,0 +1,12 @@
+# ignore data folder and logs folder
+data/
+logs/
+models/
+results/
+.vscode/
+
+# Byte-compiled / optimized / DLL files
+src/__pycache__/
+*.py[cod]
+*$py.class
+.DS_Store
