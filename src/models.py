@@ -9,12 +9,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DeepFD(nn.Module):
+    def __init__(self, feat_size, emb_size):
+        super(DeepFD, self).__init__()
 
-    def __init__(self, emb_size):
-        super(Classification, self).__init__()
-
-        self.fc1 = nn.Linear(emb_size, 64)
-        self.fc2 = nn.Linear(64, num_classes)
+        self.fc1 = nn.Linear(feat_size, emb_size)
+        self.fc2 = nn.Linear(emb_size, feat_size)
 
     def init_params(self):
         for param in self.parameters():
@@ -24,8 +23,7 @@ class DeepFD(nn.Module):
                 # initialize all bias as zeros
                 nn.init.constant_(param, 0.0)
 
-    def forward(self, embeds):
-        x = F.elu_(self.fc1(embeds))
-        x = F.elu_(self.fc2(x))
-        logists = torch.log_softmax(x, 1)
-        return logists
+    def forward(self, feats):
+        embs = F.relu_(self.fc1(feats))
+        recons = F.relu_(self.fc2(embs))
+        return embs, recons

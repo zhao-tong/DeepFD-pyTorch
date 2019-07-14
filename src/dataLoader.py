@@ -56,6 +56,8 @@ class DataLoader():
 
         assert len(labels) == np.shape(graph_u2p)[0] == np.shape(graph_u2u)[0]
         test_indexs_cls, val_indexs_cls, train_indexs_cls = self._split_data(len(labels))
+
+        setattr(self, dataSet+'_train', np.arange(np.shape(graph_u2p)[0]))
         setattr(self, dataSet+'_cls_test', test_indexs_cls)
         setattr(self, dataSet+'_cls_val', val_indexs_cls)
         setattr(self, dataSet+'_cls_train', train_indexs_cls)
