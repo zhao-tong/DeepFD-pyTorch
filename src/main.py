@@ -18,11 +18,13 @@ parser.add_argument('--config_dir', type=str, default='./configs')
 parser.add_argument('--logs_dir', type=str, default='./logs')
 parser.add_argument('--out_dir', default='./results')
 parser.add_argument('--name', type=str, default='debug')
+parser.add_argument('--cls_method', type=str, default='dbscan')
 
 parser.add_argument('--seed', type=int, default=1234)
 parser.add_argument('--epochs', type=int, default=5)
 parser.add_argument('--b_sz', type=int, default=100)
-parser.add_argument('--emb_size', type=int, default=128)
+parser.add_argument('--hidden_size', type=int, default=128)
+parser.add_argument('--emb_size', type=int, default=2)
 parser.add_argument('--max_vali_f1', type=float, default=0)
 # Hyper parameters
 parser.add_argument('--alpha', type=float, default=10)
@@ -58,13 +60,17 @@ def main():
     device = args.device
     features = torch.FloatTensor(getattr(Dl, Dl.ds+'_u2p').toarray()).to(device)
 
-    deepFD = DeepFD(features, features.size(1), args.emb_size)
+    deepFD = DeepFD(features, features.size(1), args.hidden_size, args.emb_size)
+    deepFD.to(args.device)
     model_loss = Loss_DeepFD(features, getattr(Dl, Dl.ds+'_simi'), args.device, args.alpha, args.beta, args.gamma)
 
     for epoch in range(args.epochs):
         logger.info(f'----------------------EPOCH {epoch}-----------------------')
         deepFD = train_model(Dl, args, logger, deepFD, model_loss, device, epoch)
-        args.max_vali_f1 = train_classification(Dl, args, logger, deepFD, device, args.max_vali_f1, epoch)
+        if args.cls_method == 'dbscan':
+            test_dbscan(Dl, args, logger, deepFD, epoch)
+        else:
+            args.max_vali_f1 = train_classification(Dl, args, logger, deepFD, device, args.max_vali_f1, epoch)
 
 if __name__ == '__main__':
     main()

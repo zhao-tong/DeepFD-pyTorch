@@ -10,12 +10,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DeepFD(nn.Module):
-    def __init__(self, features, feat_size, emb_size):
+    def __init__(self, features, feat_size, hidden_size, emb_size):
         super(DeepFD, self).__init__()
         self.features = features
 
-        self.fc1 = nn.Linear(feat_size, emb_size)
-        self.fc2 = nn.Linear(emb_size, feat_size)
+        self.fc1 = nn.Linear(feat_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, emb_size)
+        self.fc3 = nn.Linear(emb_size, hidden_size)
+        self.fc4 = nn.Linear(hidden_size, feat_size)
 
     def init_params(self):
         for param in self.parameters():
@@ -27,8 +29,10 @@ class DeepFD(nn.Module):
 
     def forward(self, nodes_batch):
         feats = self.features[nodes_batch]
-        embs = F.relu_(self.fc1(feats))
-        recon = F.relu_(self.fc2(embs))
+        x_en = F.relu_(self.fc1(feats))
+        embs = F.relu_(self.fc2(x_en))
+        x_de = F.relu_(self.fc3(embs))
+        recon = F.relu_(self.fc4(x_de))
         return embs, recon
 
 class Loss_DeepFD():

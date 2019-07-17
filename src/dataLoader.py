@@ -64,6 +64,7 @@ class DataLoader():
         setattr(self, dataSet+'_u2p', graph_u2p)
         setattr(self, dataSet+'_u2u', graph_u2u)
         setattr(self, dataSet+'_simi', graph_simi)
+        setattr(self, dataSet+'_labels', labels)
 
     def get_train(self):
         training_cps = defaultdict(list)
