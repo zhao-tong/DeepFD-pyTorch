@@ -77,11 +77,11 @@ class Loss_DeepFD():
         simi_feat = torch.cat(simi_feat, 0).to(self.device)
         simi_embs = torch.cat(simi_embs, 0)
         L = simi_feat * ((simi_embs - simi_feat) ** 2)
-        return L.sum()
+        return L.mean()
 
     def get_loss_recon(self, nodes_batch, recon_batch):
         feats_batch = self.features[nodes_batch]
         H_batch = (feats_batch * (self.beta - 1)) + 1
         assert feats_batch.size() == recon_batch.size() == H_batch.size()
         L = ((recon_batch - feats_batch) * H_batch) ** 2
-        return L.sum()
+        return L.mean()
