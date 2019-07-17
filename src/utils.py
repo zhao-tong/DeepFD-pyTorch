@@ -54,7 +54,44 @@ def get_simi(u1, u2):
         simi_score = len(nz_inter) / len(nz_union)
     return float(simi_score)
 
-def _eval(labels, logists):
+def cls_evaluate(Dl, logger, cls_model, features, device, out_path, max_vali_f1, epoch):
+    test_nodes = getattr(Dl, Dl.ds+'_cls_test')
+    val_nodes = getattr(Dl, Dl.ds+'_cls_val')
+    labels = getattr(Dl, Dl.ds+'_labels')
+
+    embs = features[val_nodes]
+    with torch.no_grad():
+        logists = cls_model(embs)
+    _, predicts = torch.max(logists, 1)
+    labels_val = labels[val_nodes]
+    assert len(labels_val) == len(predicts)
+    logists = logists.cpu().numpy().T[1]
+    logists = np.exp(logists)
+    vali_results = _eval(labels_val, logists, predicts.cpu().numpy())
+    logger.info('Epoch [{}], Validation F1: {:.6f}'.format(epoch, vali_results['f1']))
+    if vali_results['f1'] > max_vali_f1:
+        max_vali_f1 = vali_results['f1']
+        embs = features[test_nodes]
+        with torch.no_grad():
+            logists = cls_model(embs)
+        _, predicts = torch.max(logists, 1)
+        labels_test = labels[test_nodes]
+        assert len(labels_test) == len(predicts)
+        logists = logists.cpu().numpy().T[1]
+        logists = np.exp(logists)
+        test_results = _eval(labels_test, logists, predicts.cpu().numpy())
+
+        logger.info('Epoch [{}], Current best test F1: {:.6f}'.format(epoch, test_results['f1']))
+
+        resultfile = f'{out_path}/result.txt'
+        with open(resultfile, 'w') as fr:
+            fr.write(f'Epoch {epoch}\n')
+            fr.write('     \t pre  \t rec  \t  f1  \t  ap  \tpr_auc\troc_auc\t h_pre\t h_rec\t h_f1 \n')
+            fr.write('vali:\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\n'.format(vali_results['pre'],vali_results['rec'],vali_results['f1'],vali_results['ap'],vali_results['pr_auc'],vali_results['roc_auc'],vali_results['h_pre'],vali_results['h_rec'],vali_results['h_f1']))
+            fr.write('test:\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\n'.format(test_results['pre'],test_results['rec'],test_results['f1'],test_results['ap'],test_results['pr_auc'],test_results['roc_auc'],test_results['h_pre'],test_results['h_rec'],test_results['h_f1']))
+    return max_vali_f1
+
+def _eval(labels, logists, predicts):
     pre, rec, f1, _ = precision_recall_fscore_support(labels, predicts, average='binary')
     fpr, tpr, _ = roc_curve(labels, logists, pos_label=1)
     roc_auc = metrics.auc(fpr, tpr)
@@ -62,11 +99,6 @@ def _eval(labels, logists):
     pr_auc = metrics.auc(recalls, precisions)
     ap = average_precision_score(labels, logists)
     f1s = np.nan_to_num(2*precisions*recalls/(precisions+recalls))
-    plt.step(recalls, precisions, color='b', alpha=0.2,
-         where='post')
-    step_kwargs = ({'step': 'post'}
-               if 'step' in signature(plt.fill_between).parameters
-               else {})
     best_comb = np.argmax(f1s)
     best_f1 = f1s[best_comb]
     best_pre = precisions[best_comb]
@@ -100,15 +132,48 @@ def get_embeddings(deepFD, Dl):
     assert len(embs) == batches
     embs = torch.cat(embs, 0)
     assert len(embs) == len(nodes)
-    return embs.detach().cpu()
+    return embs.detach()
 
 def save_embeddings(embs, out_path, outer_epoch):
     pickle.dump(embs, open(f'{out_path}/embs_ep{outer_epoch}.pkl', 'wb'))
 
+def train_classification(Dl, args, logger, deepFD, cls_model, device, max_vali_f1, outer_epoch, epochs=500):
+    logger.info('Testing with MLP')
+    cls_model.zero_grad()
+    c_optimizer = torch.optim.SGD(cls_model.parameters(), lr=0.5)
+    c_optimizer.zero_grad()
+    b_sz = 100
+    train_nodes = getattr(Dl, Dl.ds+'_cls_train')
+    labels = getattr(Dl, Dl.ds+'_labels')
+    features = get_embeddings(deepFD, Dl)
+    save_embeddings(features.cpu().numpy(), args.out_path, outer_epoch)
+
+    for epoch in range(epochs):
+        # train_nodes = shuffle(train_nodes)
+        np.random.shuffle(train_nodes)
+        batches = math.ceil(len(train_nodes) / b_sz)
+
+        for index in range(batches):
+            nodes_batch = train_nodes[index*b_sz:(index+1)*b_sz]
+            labels_batch = labels[nodes_batch]
+            embs_batch = features[nodes_batch]
+            logists = cls_model(embs_batch)
+            loss = -torch.sum(logists[range(logists.size(0)), labels_batch], 0)
+            loss /= len(nodes_batch)
+            loss.backward()
+
+            nn.utils.clip_grad_norm_(cls_model.parameters(), 5)
+            c_optimizer.step()
+            c_optimizer.zero_grad()
+            cls_model.zero_grad()
+
+        max_vali_f1 = cls_evaluate(Dl, logger, cls_model, features, device, args.out_path, max_vali_f1, 1000*outer_epoch+epoch)
+    return max_vali_f1
+
 def test_dbscan(Dl, args, logger, deepFD, epoch):
     logger.info('Testing with DBSCAN...')
     labels = getattr(Dl, Dl.ds+'_labels')
-    features = get_embeddings(deepFD, Dl).numpy()
+    features = get_embeddings(deepFD, Dl).cpu().numpy()
     save_embeddings(features, args.out_path, epoch)
 
     resultfile = f'{args.out_path}/results.txt'
@@ -121,9 +186,9 @@ def test_dbscan(Dl, args, logger, deepFD, epoch):
     logists[logists >= 0] = 0
     logists[logists < 0] = 1
     logger.info('evaluating with optics')
-    results = _eval(labels, logists)
-    logger.info(' pre  \t rec  \t  f1  \t  ap  \tpr_auc\troc_auc\t h_pre\t h_rec\t h_f1 \n')
-    logger.info('{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\n'.format(results['pre'],results['rec'],results['f1'],results['ap'],results['pr_auc'],results['roc_auc'],results['h_pre'],results['h_rec'],results['h_f1']))
+    results = _eval(labels, logists, logists)
+    logger.info(' pre  \t rec  \t  f1  \t  ap  \tpr_auc\troc_auc\t h_pre\t h_rec\t h_f1')
+    logger.info('{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}'.format(results['pre'],results['rec'],results['f1'],results['ap'],results['pr_auc'],results['roc_auc'],results['h_pre'],results['h_rec'],results['h_f1']))
     fa.write('OPTICS\n')
     fa.write(' pre  \t rec  \t  f1  \t  ap  \tpr_auc\troc_auc\t h_pre\t h_rec\t h_f1 \n')
     fa.write('{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\n'.format(results['pre'],results['rec'],results['f1'],results['ap'],results['pr_auc'],results['roc_auc'],results['h_pre'],results['h_rec'],results['h_f1']))
@@ -132,9 +197,9 @@ def test_dbscan(Dl, args, logger, deepFD, epoch):
     logists_050[logists_050 >= 0] = 0
     logists_050[logists_050 < 0] = 1
     logger.info('evaluating with dbscan at 0.5')
-    results = _eval(labels, logists_050)
-    logger.info(' pre  \t rec  \t  f1  \t  ap  \tpr_auc\troc_auc\t h_pre\t h_rec\t h_f1 \n')
-    logger.info('{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\n'.format(results['pre'],results['rec'],results['f1'],results['ap'],results['pr_auc'],results['roc_auc'],results['h_pre'],results['h_rec'],results['h_f1']))
+    results = _eval(labels, logists_050, logists_050)
+    logger.info(' pre  \t rec  \t  f1  \t  ap  \tpr_auc\troc_auc\t h_pre\t h_rec\t h_f1')
+    logger.info('{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}'.format(results['pre'],results['rec'],results['f1'],results['ap'],results['pr_auc'],results['roc_auc'],results['h_pre'],results['h_rec'],results['h_f1']))
     fa.write('DBSCAN at 0.5\n')
     fa.write(' pre  \t rec  \t  f1  \t  ap  \tpr_auc\troc_auc\t h_pre\t h_rec\t h_f1 \n')
     fa.write('{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\n'.format(results['pre'],results['rec'],results['f1'],results['ap'],results['pr_auc'],results['roc_auc'],results['h_pre'],results['h_rec'],results['h_f1']))
@@ -143,16 +208,13 @@ def test_dbscan(Dl, args, logger, deepFD, epoch):
     logists_200[logists_200 >= 0] = 0
     logists_200[logists_200 < 0] = 1
     logger.info('evaluating with dbscan at 2')
-    results = _eval(labels, logists_200)
-    logger.info(' pre  \t rec  \t  f1  \t  ap  \tpr_auc\troc_auc\t h_pre\t h_rec\t h_f1 \n')
-    logger.info('{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\n'.format(results['pre'],results['rec'],results['f1'],results['ap'],results['pr_auc'],results['roc_auc'],results['h_pre'],results['h_rec'],results['h_f1']))
+    results = _eval(labels, logists_200, logists_200)
+    logger.info(' pre  \t rec  \t  f1  \t  ap  \tpr_auc\troc_auc\t h_pre\t h_rec\t h_f1')
+    logger.info('{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}'.format(results['pre'],results['rec'],results['f1'],results['ap'],results['pr_auc'],results['roc_auc'],results['h_pre'],results['h_rec'],results['h_f1']))
     fa.write('DBSCAN at 2\n')
     fa.write(' pre  \t rec  \t  f1  \t  ap  \tpr_auc\troc_auc\t h_pre\t h_rec\t h_f1 \n')
     fa.write('{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\n'.format(results['pre'],results['rec'],results['f1'],results['ap'],results['pr_auc'],results['roc_auc'],results['h_pre'],results['h_rec'],results['h_f1']))
     fa.close()
-
-def train_classification(Dl, args, logger, deepFD, device, max_vali_f1, epoch):
-    pass
 
 def train_model(Dl, args, logger, deepFD, model_loss, device, epoch):
     train_nodes = getattr(Dl, Dl.ds+'_train')

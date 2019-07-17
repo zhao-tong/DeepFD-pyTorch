@@ -50,7 +50,7 @@ torch.manual_seed(args.seed)
 torch.cuda.manual_seed_all(args.seed)
 
 def main():
-    args.name = f'{args.name}_{args.dataSet}_{time.strftime("%m-%d_%H-%M")}'
+    args.name = f'{args.name}_{args.dataSet}_{args.cls_method}_{time.strftime("%m-%d_%H-%M")}'
     args.out_path  = args.out_dir  + '/' + args.name
     if not os.path.isdir(args.out_path): os.mkdir(args.out_path)
 
@@ -63,14 +63,17 @@ def main():
     deepFD = DeepFD(features, features.size(1), args.hidden_size, args.emb_size)
     deepFD.to(args.device)
     model_loss = Loss_DeepFD(features, getattr(Dl, Dl.ds+'_simi'), args.device, args.alpha, args.beta, args.gamma)
+    if args.cls_method == 'mlp':
+        cls_model = Classification(args.emb_size)
+        cls_model.to(args.device)
 
     for epoch in range(args.epochs):
         logger.info(f'----------------------EPOCH {epoch}-----------------------')
         deepFD = train_model(Dl, args, logger, deepFD, model_loss, device, epoch)
         if args.cls_method == 'dbscan':
             test_dbscan(Dl, args, logger, deepFD, epoch)
-        else:
-            args.max_vali_f1 = train_classification(Dl, args, logger, deepFD, device, args.max_vali_f1, epoch)
+        elif args.cls_method == 'mlp':
+            args.max_vali_f1 = train_classification(Dl, args, logger, deepFD, cls_model, device, args.max_vali_f1, epoch)
 
 if __name__ == '__main__':
     main()
