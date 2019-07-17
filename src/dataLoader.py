@@ -55,7 +55,7 @@ class DataLoader():
             self.logger.info('Calculated user-user similarity and saved it for catch.')
 
         assert len(labels) == np.shape(graph_u2p)[0] == np.shape(graph_u2u)[0]
-        test_indexs_cls, val_indexs_cls, train_indexs_cls = self._split_data(len(labels))
+        test_indexs_cls, val_indexs_cls, train_indexs_cls = self._split_data_cls(len(labels))
 
         setattr(self, dataSet+'_train', np.arange(np.shape(graph_u2p)[0]))
         setattr(self, dataSet+'_cls_test', test_indexs_cls)
@@ -87,7 +87,7 @@ class DataLoader():
                 training_cps[i].append((i, neg_n))
         return training_cps
 
-    def _split_data_cls(self, num_node, test_split=3, val_split=6):
+    def _split_data_cls(self, num_nodes, test_split=3, val_split=6):
         rand_indices = np.random.permutation(num_nodes)
 
         test_size = num_nodes // test_split

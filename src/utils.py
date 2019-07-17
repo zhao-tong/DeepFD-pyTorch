@@ -53,21 +53,25 @@ def get_simi(u1, u2):
         simi_score = len(nz_inter) / len(nz_union)
     return float(simi_score)
 
+def train_classification(Dl, args, logger, deepFD, device, max_vali_f1, epoch):
+    pass
+
 def train_model(Dl, args, logger, deepFD, model_loss, device, epoch):
-    train_nodes = getattr(Dl, ds+'_train')
+    train_nodes = getattr(Dl, Dl.ds+'_train')
     np.random.shuffle(train_nodes)
 
     params = []
     for param in deepFD.parameters():
         if param.requires_grad:
             params.append(param)
-    optimizer = torch.optim.SGD(params, lr=0.025)
+    optimizer = torch.optim.SGD(params, lr=args.lr, weight_decay=args.gamma)
     optimizer.zero_grad()
     deepFD.zero_grad()
 
     batches = math.ceil(len(train_nodes) / args.b_sz)
     visited_nodes = set()
     training_cps = Dl.get_train()
+    logger.info('sampled pos and neg nodes for each node in this epoch.')
     for index in range(batches):
         nodes_batch = train_nodes[index*args.b_sz:(index+1)*args.b_sz]
         nodes_batch = np.asarray(model_loss.extend_nodes(nodes_batch, training_cps))
