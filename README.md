@@ -18,13 +18,13 @@ Before running the model, first you need to create two folders: `results/` and `
 
 Required input data files are `graph_u2p` and `labels`, the paths need to be modified in `configs/file_paths.json`.
 
-`graph_u2p` is the adjacency matrix stored in scipy.sparse.csr_matrix format. Where each none-zero entry stands for a edge.
+`graph_u2p` is the pickled adjacency matrix in `scipy.sparse.csr_matrix` format, where each none-zero entry stands for a edge.
 
-`labels` is the binary labels stored in numpy.ndarray format. Where 1 stands for fraudulent user and 0 stands for benign user.
+`labels` is the pickled binary labels in `numpy.ndarray` format, where 1 stands for fraudulent user and 0 stands for benign user.
 
 **Example Usage**
 
-To run the unsupervised model on Cuda with the default gpu card:
+To run the unsupervised model on Cuda with the default GPU card:
 ```
 python -m src.main --cuda 9 --dataSet [YourDataSet] --cls_method [dbscan or mlp]
 ```
