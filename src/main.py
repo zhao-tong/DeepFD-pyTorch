@@ -21,7 +21,7 @@ parser.add_argument('--name', type=str, default='debug')
 parser.add_argument('--cls_method', type=str, default='dbscan')
 
 parser.add_argument('--seed', type=int, default=1234)
-parser.add_argument('--epochs', type=int, default=5)
+parser.add_argument('--epochs', type=int, default=10)
 parser.add_argument('--b_sz', type=int, default=100)
 parser.add_argument('--hidden_size', type=int, default=128)
 parser.add_argument('--emb_size', type=int, default=2)

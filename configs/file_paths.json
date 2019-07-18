@@ -1,8 +1,8 @@
 {
     "weibo": {
         "graph_u2p": "./data/weibo_s/weibo_s_graph_u2p.pkl",
+        "labels": "./data/weibo_s/weibo_s_labels_u.pkl",
         "graph_u2u": "./data/weibo_s/weibo_s_graph_u2u.pkl",
-        "graph_u2u_simi": "./data/weibo_s/weibo_s_graph_u2u_simi.pkl",
-        "labels": "./data/weibo_s/weibo_s_labels_u.pkl"
+        "graph_u2u_simi": "./data/weibo_s/weibo_s_graph_u2u_simi.pkl"
     }
 }
