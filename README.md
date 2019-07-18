@@ -12,11 +12,11 @@ Other than the unsupervised DBSCAN classifier used in the original paper, I also
 
 
 ## Basic Usage
-First you need to create two folders: results/ and data/. Then you need to modify the file paths for data files in configs/file_paths.json.
+Before running the model, first you need to create two folders: `results/` and `data/`.
 
-**Data Formats**
+**Data Inputs**
 
-Required input data files are `graph_u2p` and `labels`.
+Required input data files are `graph_u2p` and `labels`, the paths need to be modified in `configs/file_paths.json`.
 
 `graph_u2p` is the adjacency matrix stored in scipy.sparse.csr_matrix format. Where each none-zero entry stands for a edge.
 
