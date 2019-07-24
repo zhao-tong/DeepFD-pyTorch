@@ -1,10 +1,11 @@
 # DeepFD-pyTorch
-This is a PyTorch implementation of DeepFD, used as a baseline in BiGAL.
+This is a PyTorch implementation of DeepFD ([Deep Structure Learning for Fraud Detection](https://ieeexplore.ieee.org/abstract/document/8594881)), used as a baseline in my paper.
 Other than the unsupervised DBSCAN classifier used in the original paper, I also added a supervised 3-layer MLP as a classifier option. The whole embedding part is still always unsupervised.
 
 #### Authors of this code package:
 [Tong Zhao](https://github.com/zhao-tong) (tzhao2@nd.edu),
-[Kaifeng Yu](https://github.com/kaifeng16) (ykf16@mails.tsinghua.edu.cn).
+[Kaifeng Yu](https://github.com/kaifeng16) (ykf16@mails.tsinghua.edu.cn),
+[Chuchen Deng](https://github.com/ChuchenD) (cdeng@nd.edu).
 
 ## Environment settings
 - python==3.6.8
