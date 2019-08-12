@@ -21,7 +21,7 @@ Required input data files are `graph_u2p` and `labels`, the paths need to be mod
 
 `graph_u2p` is the pickled adjacency matrix in `scipy.sparse.csr_matrix` format, where each none-zero entry stands for a edge.
 
-`labels` is the pickled binary labels in `numpy.ndarray` format, where 1 stands for fraudulent user and 0 stands for benign user.
+`labels` is the pickled binary labels in `numpy.ndarray` format, where 1 stands for fraudulent user and 0 stands for benign user. For dataset with limited labels, the unlabeled user should be labeled as -1 in the labels vector.
 
 **Example Usage**
 
