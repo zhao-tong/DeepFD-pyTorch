@@ -1,3 +1,6 @@
+__author__ = 'Tong Zhao'
+__email__ = 'tzhao2@nd.edu'
+
 import os
 import sys
 import copy
@@ -55,7 +58,11 @@ class DataLoader():
             self.logger.info('Calculated user-user similarity and saved it for catch.')
 
         assert len(labels) == np.shape(graph_u2p)[0] == np.shape(graph_u2u)[0]
-        test_indexs_cls, val_indexs_cls, train_indexs_cls = self._split_data_cls(len(labels))
+        if ds == 'alpha':
+            labeled_nodes = np.where(labels>=0)[0]
+            test_indexs_cls, val_indexs_cls, train_indexs_cls = self._split_data_cls_limited(labeled_nodes)
+        else:
+            test_indexs_cls, val_indexs_cls, train_indexs_cls = self._split_data_cls(len(labels))
 
         setattr(self, dataSet+'_train', np.arange(np.shape(graph_u2p)[0]))
         setattr(self, dataSet+'_cls_test', test_indexs_cls)
@@ -98,5 +105,19 @@ class DataLoader():
         test_indexs = rand_indices[:test_size]
         val_indexs = rand_indices[test_size:(test_size+val_size)]
         train_indexs = rand_indices[(test_size+val_size):]
+
+        return test_indexs, val_indexs, train_indexs
+
+    def _split_data_cls_limited(self, nodes, test_split = 4, val_split = 4):
+        # used when only limited nodes are labeled
+        np.random.shuffle(nodes)
+
+        test_size = len(nodes) // test_split
+        val_size = len(nodes) // val_split
+        train_size = len(nodes) - (test_size + val_size)
+
+        val_indexs = nodes[:test_size]
+        test_indexs = nodes[test_size:(test_size+val_size)]
+        train_indexs = nodes[(test_size+val_size):]
 
         return test_indexs, val_indexs, train_indexs

@@ -1,3 +1,6 @@
+__author__ = 'Tong Zhao'
+__email__ = 'tzhao2@nd.edu'
+
 import os
 import sys
 import json
@@ -92,6 +95,12 @@ def cls_evaluate(Dl, logger, cls_model, features, device, out_path, max_vali_f1,
     return max_vali_f1
 
 def _eval(labels, logists, predicts):
+    if np.sum(labels<0) > 0:
+        labeled_nodes = np.where(labels>=0)[0]
+        labels = labels[labeled_nodes]
+        logists = logists[labeled_nodes]
+        predicts = predicts[labeled_nodes]
+
     pre, rec, f1, _ = precision_recall_fscore_support(labels, predicts, average='binary')
     fpr, tpr, _ = roc_curve(labels, logists, pos_label=1)
     roc_auc = metrics.auc(fpr, tpr)
@@ -192,28 +201,20 @@ def test_dbscan(Dl, args, logger, deepFD, epoch):
     fa.write('OPTICS\n')
     fa.write(' pre  \t rec  \t  f1  \t  ap  \tpr_auc\troc_auc\t h_pre\t h_rec\t h_f1 \n')
     fa.write('{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\n'.format(results['pre'],results['rec'],results['f1'],results['ap'],results['pr_auc'],results['roc_auc'],results['h_pre'],results['h_rec'],results['h_f1']))
-    # dbscan at 0.5
-    logists_050 = cluster_optics_dbscan(reachability=optics.reachability_,core_distances=optics.core_distances_, ordering=optics.ordering_, eps=0.5)
-    logists_050[logists_050 >= 0] = 0
-    logists_050[logists_050 < 0] = 1
-    logger.info('evaluating with dbscan at 0.5')
-    results = _eval(labels, logists_050, logists_050)
-    logger.info(' pre  \t rec  \t  f1  \t  ap  \tpr_auc\troc_auc\t h_pre\t h_rec\t h_f1')
-    logger.info('{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}'.format(results['pre'],results['rec'],results['f1'],results['ap'],results['pr_auc'],results['roc_auc'],results['h_pre'],results['h_rec'],results['h_f1']))
-    fa.write('DBSCAN at 0.5\n')
-    fa.write(' pre  \t rec  \t  f1  \t  ap  \tpr_auc\troc_auc\t h_pre\t h_rec\t h_f1 \n')
-    fa.write('{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\n'.format(results['pre'],results['rec'],results['f1'],results['ap'],results['pr_auc'],results['roc_auc'],results['h_pre'],results['h_rec'],results['h_f1']))
-    # dbscan at 2
-    logists_200 = cluster_optics_dbscan(reachability=optics.reachability_, core_distances=optics.core_distances_, ordering=optics.ordering_, eps=2)
-    logists_200[logists_200 >= 0] = 0
-    logists_200[logists_200 < 0] = 1
-    logger.info('evaluating with dbscan at 2')
-    results = _eval(labels, logists_200, logists_200)
-    logger.info(' pre  \t rec  \t  f1  \t  ap  \tpr_auc\troc_auc\t h_pre\t h_rec\t h_f1')
-    logger.info('{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}'.format(results['pre'],results['rec'],results['f1'],results['ap'],results['pr_auc'],results['roc_auc'],results['h_pre'],results['h_rec'],results['h_f1']))
-    fa.write('DBSCAN at 2\n')
-    fa.write(' pre  \t rec  \t  f1  \t  ap  \tpr_auc\troc_auc\t h_pre\t h_rec\t h_f1 \n')
-    fa.write('{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\n'.format(results['pre'],results['rec'],results['f1'],results['ap'],results['pr_auc'],results['roc_auc'],results['h_pre'],results['h_rec'],results['h_f1']))
+
+    # dbscan with different epsilon
+    epsilons = [0.5, 2, 5, 10]
+    for ep in epsilons:
+        logists = cluster_optics_dbscan(reachability=optics.reachability_, core_distances=optics.core_distances_, ordering=optics.ordering_, eps=ep)
+        logists[logists >= 0] = 0
+        logists[logists < 0] = 1
+        logger.info(f'evaluating with dbscan at {ep}')
+        results = _eval(labels, logists, logists)
+        logger.info(' pre  \t rec  \t  f1  \t  ap  \tpr_auc\troc_auc\t h_pre\t h_rec\t h_f1')
+        logger.info('{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}'.format(results['pre'],results['rec'],results['f1'],results['ap'],results['pr_auc'],results['roc_auc'],results['h_pre'],results['h_rec'],results['h_f1']))
+        fa.write(f'DBSCAN at {ep}\n')
+        fa.write(' pre  \t rec  \t  f1  \t  ap  \tpr_auc\troc_auc\t h_pre\t h_rec\t h_f1 \n')
+        fa.write('{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\n'.format(results['pre'],results['rec'],results['f1'],results['ap'],results['pr_auc'],results['roc_auc'],results['h_pre'],results['h_rec'],results['h_f1']))
     fa.close()
 
 def train_model(Dl, args, logger, deepFD, model_loss, device, epoch):

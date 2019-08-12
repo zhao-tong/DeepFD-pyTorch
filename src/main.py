@@ -1,3 +1,6 @@
+__author__ = 'Tong Zhao'
+__email__ = 'tzhao2@nd.edu'
+
 import os
 import sys
 import time
@@ -34,6 +37,7 @@ parser.add_argument('--lr', type=float, default=0.025)
 args = parser.parse_args()
 args.argv = sys.argv
 
+# check if cuda is available, warn is available but not used.
 if torch.cuda.is_available():
     if args.cuda == -1:
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
