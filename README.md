@@ -1,5 +1,5 @@
 # DeepFD-pyTorch
-This is a PyTorch implementation of DeepFD ([Deep Structure Learning for Fraud Detection](https://ieeexplore.ieee.org/abstract/document/8594881)), used as a baseline in my paper.
+This is a PyTorch implementation of DeepFD ([Deep Structure Learning for Fraud Detection](https://ieeexplore.ieee.org/abstract/document/8594881)).
 Other than the unsupervised DBSCAN classifier used in the original paper, I also added a supervised 3-layer MLP as a classifier option. The whole embedding part is still always unsupervised.
 
 #### Authors of this code package:
