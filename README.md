@@ -48,7 +48,7 @@ python -m src.main --cuda 9 --dataSet [YourDataSet] --cls_method [dbscan or mlp]
 If you find this repository useful in your research, please cite our paper:
 
 ```
-@inproceedings{yang2019query,
+@inproceedings{zhao2020error,
   title={Error-Bounded Graph Anomaly Loss for GNNs},
   author={Zhao, Tong and Deng, Chuchen and Yu, Kaifeng and Jiang, Tianwen and Wang, Daheng and Jiang, Meng},
   booktitle={Proceedings of the 29th ACM International Conference on Information and Knowledge Management},
