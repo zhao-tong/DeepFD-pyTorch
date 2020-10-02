@@ -1,5 +1,5 @@
 # DeepFD-pyTorch
-This is a PyTorch implementation of DeepFD ([Deep Structure Learning for Fraud Detection](https://ieeexplore.ieee.org/abstract/document/8594881)).
+This is a PyTorch implementation of DeepFD ([Deep Structure Learning for Fraud Detection](https://ieeexplore.ieee.org/abstract/document/8594881)), which is used as a baseline method in my paper [Error-Bounded Graph Anomaly Loss for GNNs](https://tzhao.io/files/papers/CIKM20_GAL.pdf) (CIKM20).
 Other than the unsupervised DBSCAN classifier used in the original paper, I also added a supervised 3-layer MLP as a classifier option. The whole embedding part is still always unsupervised.
 
 #### Authors of this code package:
@@ -44,7 +44,16 @@ python -m src.main --cuda 9 --dataSet [YourDataSet] --cls_method [dbscan or mlp]
 --cuda        Which GPU card to use. -1 for CPU, 9 for default GPU, 0~3 for specific GPU. (default: -1)
 ```
 
-
-
+**Citation**
+If you find this code package to be useful, please consider cite with the following bibtex:
+```
+@inproceedings{yang2019query,
+  title={Error-Bounded Graph Anomaly Loss for GNNs},
+  author={Zhao, Tong and Deng, Chuchen and Yu, Kaifeng and Jiang, Tianwen and Wang, Daheng and Jiang, Meng},
+  booktitle={Proceedings of the 29th ACM International Conference on Information and Knowledge Management},
+  pages={},
+  year={2020}
+}
+```
 
 
