@@ -44,8 +44,9 @@ python -m src.main --cuda 9 --dataSet [YourDataSet] --cls_method [dbscan or mlp]
 --cuda        Which GPU card to use. -1 for CPU, 9 for default GPU, 0~3 for specific GPU. (default: -1)
 ```
 
-**Citation**
-If you find this code package to be useful, please consider cite with the following bibtex:
+## Cite
+If you find this repository useful in your research, please cite our paper:
+
 ```
 @inproceedings{yang2019query,
   title={Error-Bounded Graph Anomaly Loss for GNNs},
